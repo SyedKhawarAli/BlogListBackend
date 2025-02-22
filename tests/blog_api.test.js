@@ -60,6 +60,42 @@ test('if the title and url properties are missing from the request data, the bac
   await api.post('/api/blogs').send(newBlog).expect(400)
 })
 
+test('a blog can be deleted', async () => {
+  const blogsAtStart = await helper.blogsInDb()
+  const blogToDelete = blogsAtStart[0]
+
+  await api
+    .delete(`/api/blogs/${blogToDelete.id}`)
+    .expect(204)
+
+  const blogsAtEnd = await helper.blogsInDb()
+  assert(blogsAtEnd.length === blogsAtStart.length - 1)
+})
+
+test('a blog can be updated', async () => {
+  const blogsAtStart = await helper.blogsInDb()
+  const blogToUpdate = blogsAtStart[0]
+  const updatedBlog = {
+    title: 'Updated blog',
+    author: 'Updated author',
+    url: 'http://updated.com',
+    likes: 1
+  }
+
+  await api
+    .put(`/api/blogs/${blogToUpdate.id}`)
+    .send(updatedBlog)
+    .expect(200)
+    .expect('Content-Type', /application\/json/)
+  
+  const blogsAtEnd = await helper.blogsInDb()
+  const updatedBlogAtEnd = blogsAtEnd.find(blog => blog.id === blogToUpdate.id)
+  
+  assert(updatedBlogAtEnd.title === updatedBlog.title)
+  assert(updatedBlogAtEnd.author === updatedBlog.author)
+  assert(updatedBlogAtEnd.url === updatedBlog.url)
+  assert(updatedBlogAtEnd.likes === updatedBlog.likes)
+})
 
 after(async () => {
   await mongoose.connection.close()
